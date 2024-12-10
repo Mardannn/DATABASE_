@@ -1,0 +1,61 @@
+--1
+BEGIN;
+INSERT INTO Orders (order_id, book_id, customer_id, order_date, quantity)
+VALUES (1, 1, 101, CURRENT_DATE, 2);
+
+UPDATE Books
+SET quantity = quantity - 2
+WHERE book_id = 1;
+
+COMMIT;
+
+SELECT * FROM Orders WHERE order_id = 1;
+SELECT * FROM Books WHERE book_id = 1;
+
+--2
+BEGIN;
+DO $$
+DECLARE
+    stock_quantity INT;
+BEGIN
+    SELECT quantity INTO stock_quantity FROM Books WHERE book_id = 3;
+
+    IF stock_quantity >= 10 THEN
+        INSERT INTO Orders (order_id, book_id, customer_id, order_date, quantity)
+        VALUES (2, 3, 102, CURRENT_DATE, 10);
+        UPDATE Books
+        SET quantity = quantity - 10
+        WHERE book_id = 3;
+    ELSE
+        RAISE NOTICE 'Out of Stock, rolling back transaction.';
+        ROLLBACK;
+    END IF;
+END $$;
+COMMIT;
+
+SELECT * FROM Books WHERE book_id = 3;
+SELECT * FROM Orders WHERE order_id = 2;
+
+--3
+BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;
+UPDATE Books
+SET price = 45.00
+WHERE book_id = 1;
+
+BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SELECT price FROM Books WHERE book_id = 1;
+
+COMMIT;
+
+SELECT price FROM Books WHERE book_id = 1;
+COMMIT;
+
+--4
+BEGIN;
+UPDATE Customers
+SET email = 'mardanbolatbek@gmail.com'
+WHERE customer_id = 101;
+
+COMMIT;
+
+SELECT email FROM Customers WHERE customer_id = 101;
